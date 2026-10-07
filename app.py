@@ -850,7 +850,7 @@ st.write(
     "Scans daily charts for A+ squeeze setups using "
     "trend, momentum, volume and price structure."
 )
-
+scan_results = st.session_state.get("scan_results", None)
 if st.button(
     "🚀 RUN A+ SCANNER",
     type="primary",
@@ -858,7 +858,9 @@ if st.button(
 ):
 
     scan_results = run_scanner(STOCK_UNIVERSE)
-
+    st.session_state["scan_results"]=scan_results
+    
+if scan_results is not None:
     if not scan_results:
 
         st.warning("No valid market data was returned.")
