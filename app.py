@@ -265,6 +265,192 @@ def calculate_indicators(df):
     return df
 
 # -------------------------------------------------
+# A+ SCORING ENGINE
+# -------------------------------------------------
+
+def score_setup(df):
+    """
+    Score the latest daily bar for bullish and bearish setups.
+    Maximum score = 100.
+    """
+
+    if df is None or len(df) < 200:
+        return None
+
+    latest = df.iloc[-1]
+    previous = df.iloc[-2]
+
+    long_score = 0
+    short_score = 0
+
+    long_reasons = []
+    short_reasons = []
+
+    # -------------------------------------------------
+    # 1. MA ALIGNMENT - 30 POINTS
+    # -------------------------------------------------
+
+    # Bullish: Price > 21 EMA > 50 SMA > 200 SMA
+    if (
+        latest["close"] > latest["EMA21"] >
+        latest["SMA50"] > latest["SMA200"]
+    ):
+        long_score += 30
+        long_reasons.append("Perfect bullish MA stack")
+
+    # Bearish: Price < 21 EMA < 50 SMA < 200 SMA
+    if (
+        latest["close"] < latest["EMA21"] <
+        latest["SMA50"] < latest["SMA200"]
+    ):
+        short_score += 30
+        short_reasons.append("Perfect bearish MA stack")
+
+    # -------------------------------------------------
+    # 2. MA DIRECTION - 15 POINTS
+    # -------------------------------------------------
+
+    if latest["EMA21_RISING"] and latest["SMA50_RISING"]:
+        long_score += 15
+        long_reasons.append("21 EMA & 50 SMA rising")
+
+    if (
+        not latest["EMA21_RISING"] and
+        not latest["SMA50_RISING"]
+    ):
+        short_score += 15
+        short_reasons.append("21 EMA & 50 SMA falling")
+
+    # -------------------------------------------------
+    # 3. SQUEEZE - 20 POINTS
+    # -------------------------------------------------
+
+    # Active squeeze
+    if latest["SQUEEZE_ON"]:
+        long_score += 15
+        short_score += 15
+
+        long_reasons.append("Squeeze compression active")
+        short_reasons.append("Squeeze compression active")
+
+        # Reward mature compression
+        if latest["SQUEEZE_BARS"] >= 3:
+            long_score += 5
+            short_score += 5
+
+            long_reasons.append("3+ squeeze bars")
+            short_reasons.append("3+ squeeze bars")
+
+    # Fresh release gets full squeeze points
+    elif latest["SQUEEZE_FIRED"]:
+        long_score += 20
+        short_score += 20
+
+        long_reasons.append("Fresh squeeze release")
+        short_reasons.append("Fresh squeeze release")
+
+    # -------------------------------------------------
+    # 4. MOMENTUM - 20 POINTS
+    # -------------------------------------------------
+
+    # Bullish momentum
+    if latest["MOMENTUM"] > 0:
+        long_score += 10
+        long_reasons.append("Momentum above zero")
+
+        if latest["MOMENTUM_RISING"]:
+            long_score += 10
+            long_reasons.append("Momentum accelerating")
+
+    # Bearish momentum
+    if latest["MOMENTUM"] < 0:
+        short_score += 10
+        short_reasons.append("Momentum below zero")
+
+        if not latest["MOMENTUM_RISING"]:
+            short_score += 10
+            short_reasons.append("Bearish momentum accelerating")
+
+    # -------------------------------------------------
+    # 5. VOLUME - 10 POINTS
+    # -------------------------------------------------
+
+    if latest["REL_VOLUME"] >= 1.20:
+        long_score += 10
+        short_score += 10
+
+        long_reasons.append("Strong relative volume")
+        short_reasons.append("Strong relative volume")
+
+    elif latest["REL_VOLUME"] >= 1.00:
+        long_score += 5
+        short_score += 5
+
+        long_reasons.append("Volume confirmation")
+        short_reasons.append("Volume confirmation")
+
+    # -------------------------------------------------
+    # 6. PRICE STRUCTURE - 5 POINTS
+    # -------------------------------------------------
+
+    if latest["close"] > previous["high"]:
+        long_score += 5
+        long_reasons.append("Bullish price expansion")
+
+    if latest["close"] < previous["low"]:
+        short_score += 5
+        short_reasons.append("Bearish price expansion")
+
+    # Never exceed 100
+    long_score = min(long_score, 100)
+    short_score = min(short_score, 100)
+
+    # -------------------------------------------------
+    # STATUS
+    # -------------------------------------------------
+
+    if latest["SQUEEZE_ON"]:
+        squeeze_status = "🔴 SQUEEZE ON"
+
+    elif latest["SQUEEZE_FIRED"]:
+        squeeze_status = "🟢 JUST FIRED"
+
+    else:
+        squeeze_status = "⚪ NO SQUEEZE"
+
+    # -------------------------------------------------
+    # RETURN RESULT
+    # -------------------------------------------------
+
+    return {
+        "symbol": None,
+
+        "price": round(float(latest["close"]), 2),
+
+        "long_score": int(long_score),
+        "short_score": int(short_score),
+
+        "squeeze": squeeze_status,
+
+        "squeeze_bars": int(latest["SQUEEZE_BARS"]),
+
+        "momentum": round(
+            float(latest["MOMENTUM"]), 2
+        ),
+
+        "relative_volume": round(
+            float(latest["REL_VOLUME"]), 2
+        ),
+
+        "ema21": round(float(latest["EMA21"]), 2),
+        "sma50": round(float(latest["SMA50"]), 2),
+        "sma200": round(float(latest["SMA200"]), 2),
+
+        "long_reasons": long_reasons,
+        "short_reasons": short_reasons
+    }
+
+# -------------------------------------------------
 # PAGE CONFIG
 # -------------------------------------------------
 st.set_page_config(
