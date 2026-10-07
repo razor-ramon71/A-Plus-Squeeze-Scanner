@@ -672,8 +672,8 @@ fig.add_trace(
         )
     )
 
-    # 21 EMA - RED
-    fig.add_trace(
+ # 21 EMA - RED
+ fig.add_trace(
         go.Scatter(
             x=chart_df.index,
             y=chart_df["EMA21"],
