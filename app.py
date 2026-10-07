@@ -811,9 +811,9 @@ st.sidebar.markdown("---")
 
 st.sidebar.write("### Moving Averages")
 
-st.sidebar.write("🔴 21 EMA")
-st.sidebar.write("⚪ 50 SMA")
-st.sidebar.write("🔴 200 SMA")
+st.sidebar.write("🟤 21 EMA")
+st.sidebar.write("🟠 50 SMA")
+st.sidebar.write("🟡 200 SMA")
 
 st.sidebar.markdown("---")
 
