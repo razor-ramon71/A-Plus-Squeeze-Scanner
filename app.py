@@ -632,6 +632,132 @@ def run_scanner(symbols):
     return results
 
 # -------------------------------------------------
+# SETUP CHART
+# -------------------------------------------------
+
+def show_setup_chart(symbol, result):
+    df = get_daily_history(symbol)
+
+    if df is None or len(df) < 200:
+        st.warning(f"Not enough chart data for {symbol}.")
+        return
+
+    # Calculate indicators on the FULL history first
+    # so the 200 SMA is accurate.
+    df = calculate_indicators(df)
+
+    # Show approximately the last 90 trading days
+    chart_df = df.tail(90).copy()
+
+    fig = go.Figure()
+
+    # Candlesticks
+    fig.add_trace(
+        go.Candlestick(
+            x=chart_df.index,
+            open=chart_df["open"],
+            high=chart_df["high"],
+            low=chart_df["low"],
+            close=chart_df["close"],
+            name=symbol
+        )
+    )
+
+    # 21 EMA - RED
+    fig.add_trace(
+        go.Scatter(
+            x=chart_df.index,
+            y=chart_df["EMA21"],
+            name="21 EMA",
+            line=dict(color="red", width=2)
+        )
+    )
+
+    # 50 SMA - WHITE
+    fig.add_trace(
+        go.Scatter(
+            x=chart_df.index,
+            y=chart_df["SMA50"],
+            name="50 SMA",
+            line=dict(color="white", width=2)
+        )
+    )
+
+    # 200 SMA - BLUE
+    fig.add_trace(
+        go.Scatter(
+            x=chart_df.index,
+            y=chart_df["SMA200"],
+            name="200 SMA",
+            line=dict(color="blue", width=2)
+        )
+    )
+
+    fig.update_layout(
+        title=f"{symbol} — A+ Setup Chart",
+        height=600,
+        template="plotly_dark",
+        xaxis_rangeslider_visible=False,
+        xaxis_title="Date",
+        yaxis_title="Price"
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    # -------------------------------------------------
+    # SETUP DETAILS
+    # -------------------------------------------------
+
+    long_score = result["long_score"]
+    short_score = result["short_score"]
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    c1.metric(
+        "Price",
+        f"${result['price']:.2f}"
+    )
+
+    c2.metric(
+        "Long Score",
+        f"{long_score}/100"
+    )
+
+    c3.metric(
+        "Short Score",
+        f"{short_score}/100"
+    )
+
+    c4.metric(
+        "Squeeze Bars",
+        result["squeeze_bars"]
+    )
+
+    st.write(
+        f"**Squeeze:** {result['squeeze']} | "
+        f"**Momentum:** {result['momentum']} | "
+        f"**Relative Volume:** {result['relative_volume']}"
+    )
+
+    # Show reasons for the stronger direction
+    if long_score >= short_score:
+
+        st.markdown("### 🟢 Bullish Setup Reasons")
+
+        for reason in result["long_reasons"]:
+            st.write("✅", reason)
+
+    else:
+
+        st.markdown("### 🔴 Bearish Setup Reasons")
+
+        for reason in result["short_reasons"]:
+            st.write("✅", reason)
+
+# -------------------------------------------------
 # PAGE CONFIG
 # -------------------------------------------------
 st.set_page_config(
