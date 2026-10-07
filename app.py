@@ -451,6 +451,100 @@ def score_setup(df):
     }
 
 # -------------------------------------------------
+# STOCK UNIVERSE
+# -------------------------------------------------
+
+STOCK_UNIVERSE = [
+    # Technology
+    "AAPL", "AMD", "AMZN", "AVGO", "CRM",
+    "DELL", "GOOGL", "META", "MSFT", "MU",
+    "NVDA", "ORCL", "PLTR", "QCOM", "TSM",
+
+    # Financial
+    "BAC", "C", "GS", "JPM", "MS", "WFC",
+
+    # Healthcare
+    "ABBV", "AMGN", "BMY", "CVS", "GILD",
+    "JNJ", "LLY", "MRK", "PFE", "UNH",
+
+    # Consumer
+    "COST", "HD", "LOW", "MCD", "NKE",
+    "SBUX", "TGT", "WMT",
+
+    # Industrial / Energy
+    "BA", "CAT", "COP", "CVX", "GE",
+    "HAL", "SLB", "XOM",
+
+    # High-beta / Growth
+    "COIN", "HOOD", "MARA", "RBLX",
+    "ROKU", "SOFI", "UBER"
+]
+
+
+# -------------------------------------------------
+# SCAN ONE STOCK
+# -------------------------------------------------
+
+def scan_symbol(symbol):
+
+    df = get_daily_history(symbol)
+
+    if df is None or len(df) < 200:
+        return None
+
+    df = calculate_indicators(df)
+
+    result = score_setup(df)
+
+    if result is None:
+        return None
+
+    result["symbol"] = symbol
+
+    return result
+
+
+# -------------------------------------------------
+# RUN SCANNER
+# -------------------------------------------------
+
+def run_scanner(symbols):
+
+    results = []
+
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
+    total = len(symbols)
+
+    for i, symbol in enumerate(symbols):
+
+        status_text.write(
+            f"Scanning {symbol}... "
+            f"{i + 1} of {total}"
+        )
+
+        try:
+
+            result = scan_symbol(symbol)
+
+            if result:
+                results.append(result)
+
+        except Exception:
+            # Don't let one bad ticker stop the scan
+            pass
+
+        progress_bar.progress(
+            (i + 1) / total
+        )
+
+    status_text.empty()
+    progress_bar.empty()
+
+    return results
+
+# -------------------------------------------------
 # PAGE CONFIG
 # -------------------------------------------------
 st.set_page_config(
