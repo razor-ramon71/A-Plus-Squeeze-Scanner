@@ -655,13 +655,13 @@ df["SMA50"] = df["close"].rolling(
 df["SMA200"] = df["close"].rolling(
     window=200
 ).mean()
-    # Show approximately the last 90 trading days
+# Show approximately the last 90 trading days
 chart_df = df.tail(90).copy()
 
-    fig = go.Figure()
+fig = go.Figure()
 
-    # Candlesticks
-    fig.add_trace(
+# Candlesticks
+fig.add_trace(
         go.Candlestick(
             x=chart_df.index,
             open=chart_df["open"],
