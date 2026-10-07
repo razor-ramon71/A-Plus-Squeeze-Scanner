@@ -1,4 +1,90 @@
 import streamlit as st
+import requests
+import pandas as pd
+import numpy as np
+# -------------------------------------------------
+# TRADIER CONNECTION
+# -------------------------------------------------
+
+TRADIER_BASE_URL = "https://api.tradier.com/v1"
+
+try:
+    TRADIER_TOKEN = st.secrets["TRADIER_TOKEN"]
+except Exception:
+    TRADIER_TOKEN = None
+
+
+def tradier_headers():
+    return {
+        "Authorization": f"Bearer {TRADIER_TOKEN}",
+        "Accept": "application/json"
+    }
+
+
+def get_daily_history(symbol, days=300):
+    """Download daily OHLCV history from Tradier."""
+
+    if not TRADIER_TOKEN:
+        return None
+
+    end_date = pd.Timestamp.today()
+    start_date = end_date - pd.Timedelta(days=days * 1.6)
+
+    url = f"{TRADIER_BASE_URL}/markets/history"
+
+    params = {
+        "symbol": symbol.upper(),
+        "interval": "daily",
+        "start": start_date.strftime("%Y-%m-%d"),
+        "end": end_date.strftime("%Y-%m-%d")
+    }
+
+    try:
+        response = requests.get(
+            url,
+            headers=tradier_headers(),
+            params=params,
+            timeout=15
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        history = data.get("history")
+
+        if not history:
+            return None
+
+        days_data = history.get("day")
+
+        if not days_data:
+            return None
+
+        if isinstance(days_data, dict):
+            days_data = [days_data]
+
+        df = pd.DataFrame(days_data)
+
+        for column in ["open", "high", "low", "close", "volume"]:
+            df[column] = pd.to_numeric(
+                df[column],
+                errors="coerce"
+            )
+
+        df["date"] = pd.to_datetime(df["date"])
+
+        df = (
+            df.sort_values("date")
+            .dropna()
+            .reset_index(drop=True)
+        )
+
+        return df
+
+    except Exception as e:
+        st.error(f"Tradier error for {symbol}: {e}")
+        return None
 
 # -------------------------------------------------
 # PAGE CONFIG
@@ -119,7 +205,39 @@ Volume confirmation
 Bearish price structure
         """
     )
+st.markdown("---")
+st.subheader("🔌 Tradier Data Test")
 
+test_symbol = st.text_input(
+    "Test ticker",
+    value="AAPL"
+).upper()
+
+if st.button("Test Tradier Connection"):
+
+    with st.spinner(f"Loading {test_symbol}..."):
+
+        test_data = get_daily_history(test_symbol)
+
+        if test_data is not None and len(test_data) > 0:
+
+            latest = test_data.iloc[-1]
+
+            st.success(
+                f"Tradier connected! ✅ "
+                f"{test_symbol} latest close: "
+                f"${latest['close']:.2f}"
+            )
+
+            st.dataframe(
+                test_data.tail(5),
+                use_container_width=True
+            )
+
+        else:
+            st.error(
+                "No market data received. Check the Tradier token."
+            )
 st.caption(
     "A+ Squeeze Scanner • Swing-trade research tool • "
     "Signals are not financial advice."
