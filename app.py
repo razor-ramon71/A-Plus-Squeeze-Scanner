@@ -656,7 +656,7 @@ df["SMA200"] = df["close"].rolling(
     window=200
 ).mean()
     # Show approximately the last 90 trading days
-    chart_df = df.tail(90).copy()
+chart_df = df.tail(90).copy()
 
     fig = go.Figure()
 
