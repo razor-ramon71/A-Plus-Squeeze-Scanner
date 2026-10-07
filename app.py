@@ -642,20 +642,21 @@ def show_setup_chart(symbol, result):
         st.warning(f"Not enough chart data for {symbol}.")
         return
 
-   # Calculate moving averages on the FULL history
-df["EMA21"] = df["close"].ewm(
-    span=21,
-    adjust=False
-).mean()
+    # Calculate moving averages on the FULL history
+    df["EMA21"] = df["close"].ewm(
+        span=21,
+        adjust=False
+    ).mean()
 
-df["SMA50"] = df["close"].rolling(
-    window=50
-).mean()
+    df["SMA50"] = df["close"].rolling(
+        window=50
+    ).mean()
 
-df["SMA200"] = df["close"].rolling(
-    window=200
-).mean()
- # Show approximately the last 90 trading days
+    df["SMA200"] = df["close"].rolling(
+        window=200
+    ).mean()
+
+    # Show approximately the last 90 trading days
     chart_df = df.tail(90).copy()
 
     fig = go.Figure()
@@ -715,7 +716,6 @@ df["SMA200"] = df["close"].rolling(
         fig,
         use_container_width=True
     )
-
     # -------------------------------------------------
     # SETUP DETAILS
     # -------------------------------------------------
