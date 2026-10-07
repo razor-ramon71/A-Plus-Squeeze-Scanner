@@ -673,33 +673,33 @@ def show_setup_chart(symbol, result):
         )
     )
 
-    # 21 EMA - RED
+    # 21 EMA - BROWN
     fig.add_trace(
         go.Scatter(
             x=chart_df.index,
             y=chart_df["EMA21"],
             name="21 EMA",
-            line=dict(color="red", width=2)
+            line=dict(color="brown", width=2)
         )
     )
 
-    # 50 SMA - WHITE
+    # 50 SMA - ORANGE
     fig.add_trace(
         go.Scatter(
             x=chart_df.index,
             y=chart_df["SMA50"],
             name="50 SMA",
-            line=dict(color="white", width=2)
+            line=dict(color="orange", width=2)
         )
     )
 
-    # 200 SMA - BLUE
+    # 200 SMA - YELLOW
     fig.add_trace(
         go.Scatter(
             x=chart_df.index,
             y=chart_df["SMA200"],
             name="200 SMA",
-            line=dict(color="blue", width=2)
+            line=dict(color="yellow", width=2)
         )
     )
 
