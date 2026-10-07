@@ -987,6 +987,53 @@ if st.button(
             )
 
 # -------------------------------------------------
+# SETUP INSPECTOR
+# -------------------------------------------------
+
+st.markdown("---")
+st.subheader("🔎 Setup Inspector")
+
+if "scan_results" in locals() and scan_results:
+
+    qualified = [
+        x for x in scan_results
+        if x["long_score"] >= minimum_score
+        or x["short_score"] >= minimum_score
+    ]
+
+    if qualified:
+
+        symbols_to_inspect = sorted(
+            set(x["symbol"] for x in qualified)
+        )
+
+        selected_symbol = st.selectbox(
+            "Choose an A+ setup to inspect",
+            symbols_to_inspect
+        )
+
+        selected_result = next(
+            x for x in qualified
+            if x["symbol"] == selected_symbol
+        )
+
+        show_setup_chart(
+            selected_symbol,
+            selected_result
+        )
+
+    else:
+
+        st.info(
+            f"No setups reached {minimum_score}/100."
+        )
+
+else:
+
+    st.info(
+        "Run the A+ scanner to generate setups for inspection."
+    )
+# -------------------------------------------------
 # STRATEGY DESCRIPTION
 # -------------------------------------------------
 with st.expander("📖 A+ Scanner Rules"):
