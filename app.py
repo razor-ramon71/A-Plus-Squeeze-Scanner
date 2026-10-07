@@ -3,8 +3,7 @@ import requests
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from stock_universe
-import STOCK_UNIVERSE,SECTORS, get_sector
+from stock_universe import STOCK_UNIVERSE,SECTORS, get_sector
 # -------------------------------------------------
 # TRADIER CONNECTION
 # -------------------------------------------------
