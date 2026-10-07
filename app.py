@@ -87,6 +87,184 @@ def get_daily_history(symbol, days=300):
         return None
 
 # -------------------------------------------------
+# TECHNICAL INDICATORS
+# -------------------------------------------------
+
+def calculate_indicators(df):
+    """
+    Calculate:
+    - 21 EMA
+    - 50 SMA
+    - 200 SMA
+    - Bollinger Bands
+    - Keltner Channels
+    - Squeeze ON/OFF
+    - Momentum
+    - Relative Volume
+    """
+
+    df = df.copy()
+
+    # -------------------------
+    # MOVING AVERAGES
+    # -------------------------
+    df["EMA21"] = df["close"].ewm(
+        span=21,
+        adjust=False
+    ).mean()
+
+    df["SMA50"] = df["close"].rolling(50).mean()
+
+    df["SMA200"] = df["close"].rolling(200).mean()
+
+    # -------------------------
+    # BOLLINGER BANDS
+    # 20 period / 2 std dev
+    # -------------------------
+    bb_length = 20
+
+    df["BB_MID"] = df["close"].rolling(bb_length).mean()
+
+    bb_std = df["close"].rolling(bb_length).std()
+
+    df["BB_UPPER"] = df["BB_MID"] + (2.0 * bb_std)
+    df["BB_LOWER"] = df["BB_MID"] - (2.0 * bb_std)
+
+    # -------------------------
+    # TRUE RANGE / ATR
+    # -------------------------
+    previous_close = df["close"].shift(1)
+
+    tr1 = df["high"] - df["low"]
+    tr2 = (df["high"] - previous_close).abs()
+    tr3 = (df["low"] - previous_close).abs()
+
+    df["TR"] = pd.concat(
+        [tr1, tr2, tr3],
+        axis=1
+    ).max(axis=1)
+
+    df["ATR20"] = df["TR"].rolling(20).mean()
+
+    # -------------------------
+    # KELTNER CHANNEL
+    # 20 period / 1.5 ATR
+    # -------------------------
+    df["KC_MID"] = df["close"].rolling(20).mean()
+
+    df["KC_UPPER"] = (
+        df["KC_MID"] +
+        (1.5 * df["ATR20"])
+    )
+
+    df["KC_LOWER"] = (
+        df["KC_MID"] -
+        (1.5 * df["ATR20"])
+    )
+
+    # -------------------------
+    # SQUEEZE
+    # Bollinger Bands inside
+    # Keltner Channel
+    # -------------------------
+    df["SQUEEZE_ON"] = (
+        (df["BB_LOWER"] > df["KC_LOWER"]) &
+        (df["BB_UPPER"] < df["KC_UPPER"])
+    )
+
+    # First bar after squeeze releases
+    df["SQUEEZE_FIRED"] = (
+        (~df["SQUEEZE_ON"]) &
+        (df["SQUEEZE_ON"].shift(1) == True)
+    )
+
+    # Count consecutive squeeze bars
+    squeeze_count = []
+    count = 0
+
+    for value in df["SQUEEZE_ON"]:
+        if value:
+            count += 1
+        else:
+            count = 0
+
+        squeeze_count.append(count)
+
+    df["SQUEEZE_BARS"] = squeeze_count
+
+    # -------------------------
+    # MOMENTUM
+    # Approximate directional
+    # squeeze momentum
+    # -------------------------
+    highest_high = df["high"].rolling(20).max()
+    lowest_low = df["low"].rolling(20).min()
+    average_close = df["close"].rolling(20).mean()
+
+    midpoint = (
+        ((highest_high + lowest_low) / 2)
+        + average_close
+    ) / 2
+
+    raw_momentum = df["close"] - midpoint
+
+    # Linear regression momentum
+    def linreg_last(values):
+        if len(values) < 20:
+            return np.nan
+
+        x = np.arange(len(values))
+
+        slope, intercept = np.polyfit(
+            x,
+            values,
+            1
+        )
+
+        return (
+            slope * (len(values) - 1)
+            + intercept
+        )
+
+    df["MOMENTUM"] = raw_momentum.rolling(20).apply(
+        linreg_last,
+        raw=True
+    )
+
+    df["MOMENTUM_RISING"] = (
+        df["MOMENTUM"] >
+        df["MOMENTUM"].shift(1)
+    )
+
+    # -------------------------
+    # VOLUME
+    # -------------------------
+    df["AVG_VOLUME20"] = (
+        df["volume"].rolling(20).mean()
+    )
+
+    df["REL_VOLUME"] = (
+        df["volume"] /
+        df["AVG_VOLUME20"]
+    )
+
+    # -------------------------
+    # MA SLOPES
+    # Compare today vs 5 bars ago
+    # -------------------------
+    df["EMA21_RISING"] = (
+        df["EMA21"] >
+        df["EMA21"].shift(5)
+    )
+
+    df["SMA50_RISING"] = (
+        df["SMA50"] >
+        df["SMA50"].shift(5)
+    )
+
+    return df
+
+# -------------------------------------------------
 # PAGE CONFIG
 # -------------------------------------------------
 st.set_page_config(
