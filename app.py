@@ -655,13 +655,13 @@ df["SMA50"] = df["close"].rolling(
 df["SMA200"] = df["close"].rolling(
     window=200
 ).mean()
-# Show approximately the last 90 trading days
-chart_df = df.tail(90).copy()
+ # Show approximately the last 90 trading days
+    chart_df = df.tail(90).copy()
 
-fig = go.Figure()
+    fig = go.Figure()
 
-# Candlesticks
-fig.add_trace(
+    # Candlesticks
+    fig.add_trace(
         go.Candlestick(
             x=chart_df.index,
             open=chart_df["open"],
@@ -672,8 +672,8 @@ fig.add_trace(
         )
     )
 
-  # 21 EMA - RED
-   fig.add_trace(
+    # 21 EMA - RED
+    fig.add_trace(
         go.Scatter(
             x=chart_df.index,
             y=chart_df["EMA21"],
@@ -703,7 +703,7 @@ fig.add_trace(
     )
 
     fig.update_layout(
-        title=f"{symbol} — A+ Setup Chart",
+        title=f"{symbol} - A+ Setup Chart",
         height=600,
         template="plotly_dark",
         xaxis_rangeslider_visible=False,
