@@ -624,10 +624,154 @@ st.markdown("---")
 
 st.subheader("🏆 A+ Trade Candidates")
 
-st.warning(
-    "Scanner engine not connected yet. "
-    "Next step: add market data and the A+ scoring engine."
+st.write(
+    "Scans daily charts for A+ squeeze setups using "
+    "trend, momentum, volume and price structure."
 )
+
+if st.button(
+    "🚀 RUN A+ SCANNER",
+    type="primary",
+    use_container_width=True
+):
+
+    scan_results = run_scanner(STOCK_UNIVERSE)
+
+    if not scan_results:
+
+        st.warning("No valid market data was returned.")
+
+    else:
+
+        longs = [
+            x for x in scan_results
+            if x["long_score"] >= minimum_score
+        ]
+
+        shorts = [
+            x for x in scan_results
+            if x["short_score"] >= minimum_score
+        ]
+
+        longs = sorted(
+            longs,
+            key=lambda x: x["long_score"],
+            reverse=True
+        )
+
+        shorts = sorted(
+            shorts,
+            key=lambda x: x["short_score"],
+            reverse=True
+        )
+
+        # -----------------------------------------
+        # RESULTS SUMMARY
+        # -----------------------------------------
+
+        c1, c2, c3 = st.columns(3)
+
+        c1.metric("Stocks Scanned", len(scan_results))
+        c2.metric("🟢 A+ Longs", len(longs))
+        c3.metric("🔴 A+ Shorts", len(shorts))
+
+        # -----------------------------------------
+        # A+ LONGS
+        # -----------------------------------------
+
+        st.markdown("## 🟢 A+ LONG SETUPS")
+
+        if longs:
+
+            long_table = pd.DataFrame([
+                {
+                    "Rank": i + 1,
+                    "Symbol": x["symbol"],
+                    "Score": x["long_score"],
+                    "Price": x["price"],
+                    "Squeeze": x["squeeze"],
+                    "Sqz Bars": x["squeeze_bars"],
+                    "Momentum": x["momentum"],
+                    "Rel Vol": x["relative_volume"],
+                    "21 EMA": x["ema21"],
+                    "50 SMA": x["sma50"],
+                    "200 SMA": x["sma200"]
+                }
+                for i, x in enumerate(longs)
+            ])
+
+            st.dataframe(
+                long_table,
+                use_container_width=True,
+                hide_index=True
+            )
+
+            st.success(
+                f"🔥 #1 LONG: {longs[0]['symbol']} — "
+                f"{longs[0]['long_score']}/100"
+            )
+
+            with st.expander(
+                f"Why {longs[0]['symbol']} is A+"
+            ):
+                for reason in longs[0]["long_reasons"]:
+                    st.write("✅", reason)
+
+        else:
+
+            st.info(
+                f"No bullish setups reached "
+                f"{minimum_score}/100."
+            )
+
+        # -----------------------------------------
+        # A+ SHORTS
+        # -----------------------------------------
+
+        st.markdown("## 🔴 A+ SHORT SETUPS")
+
+        if shorts:
+
+            short_table = pd.DataFrame([
+                {
+                    "Rank": i + 1,
+                    "Symbol": x["symbol"],
+                    "Score": x["short_score"],
+                    "Price": x["price"],
+                    "Squeeze": x["squeeze"],
+                    "Sqz Bars": x["squeeze_bars"],
+                    "Momentum": x["momentum"],
+                    "Rel Vol": x["relative_volume"],
+                    "21 EMA": x["ema21"],
+                    "50 SMA": x["sma50"],
+                    "200 SMA": x["sma200"]
+                }
+                for i, x in enumerate(shorts)
+            ])
+
+            st.dataframe(
+                short_table,
+                use_container_width=True,
+                hide_index=True
+            )
+
+            st.error(
+                f"🎯 #1 SHORT: {shorts[0]['symbol']} — "
+                f"{shorts[0]['short_score']}/100"
+            )
+
+            with st.expander(
+                f"Why {shorts[0]['symbol']} is A+"
+            ):
+                for reason in shorts[0]["short_reasons"]:
+                    st.write("✅", reason)
+
+        else:
+
+            st.info(
+                f"No bearish setups reached "
+                f"{minimum_score}/100."
+            )
 
 # -------------------------------------------------
 # STRATEGY DESCRIPTION
